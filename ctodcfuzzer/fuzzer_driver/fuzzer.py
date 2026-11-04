@@ -108,7 +108,7 @@ class PSFuzzer(Fuzzer):
                                     stdout=subprocess.DEVNULL,
                                     stderr=subprocess.DEVNULL)
         #                            bufsize =0)
-        # 여기서 subprocess.Popen() 하면서 pid 생성이 됨.   
+        
         assert proc
         self.__proc = proc
         self.__pid = proc.pid
