@@ -1,39 +1,40 @@
 # CTODCFuzzer
 
+CTODCFuzzer is a **Common Target-Oriented Evaluation-based Directed Collaborative Fuzzing** Framework. It enables multiple directed fuzzers, including AFLGo, WindRanger, and DAFL, to collaboratefor improved target reachability and vulnerability reproduction.
+
 ## Installing
 
 ### Required system packages
 - `docker`
 
 ### Build docker image
-To build the Docker image, follow these steps:
-
 First build baseline fuzzers and benchmarks.
 
 ```
 ./docker/build.sh
 ```
 
-Then, build the all-in-one docker including `ctodcfuzzer` and all the fuzzers/benchmarks.
+Then, build the Docker image containing `CTODCFuzzer` and the required fuzzers and benchmarks::
 
 ```
 ./build.sh
 ```
 
-You can tune the image name/tag in these `build.sh`.
+The Docker image name and tag can be configured in the corresponding `build.sh` scripts.
 
-You might need to tune `_UID` and `GID` (they are hard-coded to `2000` when building the pre-built image) in `build.sh` to bypass docker volume permission issue if you don't want to use root user.
-
-#### Build Note/Warning
-
-The build script parallels the compilation process a lot by making the jobs runs in the background (by inserting `&` at the end of shell commands). It will takes a lot of CPU and RAM (especially during linking). Please remove `&` in build scripts (`build.sh` or `build_all.sh` under `docker/benchmark`) when you are building under less performant machines.
+If necessary, adjust`_UID` and `GID` in build.sh to avoid permission issues with Docker-mounted volumes.
 
 ### Increase inotify limits
+
+Increase the inotify limits on the host system:
+
 ```sh
 sysctl -w fs.inotify.max_user_instances=8192
 sysctl -w fs.inotify.max_user_watches=524288
 ```
-To make it persistent between reboot; add the following lines to `/etc/sysctl.conf` on the host.
+
+To make these settings persistent across reboots, add the following lines to `/etc/sysctl.conf`.
+
 ```
 fs.inotify.max_user_instances=8192
 fs.inotify.max_user_watches=524288
@@ -41,28 +42,28 @@ fs.inotify.max_user_watches=524288
 
 ## Running
 ### Launching a docker container
+
+Launch the Docker container using:
 ```sh
 docker run --rm --privileged -it ctodcfuzzer /bin/bash
 ```
-Note that, the result is not preserved. To preserve the fuzzing output, we need
-to mount a docker volume.
+
+By default, files generated inside the container are not preserved after the container is removed.
+
+To preserve fuzzing results, mount a host directory:
 
 ```sh
 docker run --rm --privileged -v $PWD:/work/ctodcfuzzer -w /work/ctodcfuzzer -it ctodcfuzzer /bin/bash
 ```
-This command mount (by `-v`) your current directory (`$PWD`) to `/work/ctodcfueer` in the container and change the working directory to `/work/ctodcfueer` (by `-w`).
 
-Afterward, make sure the fuzzing output directory is under `/work/ctodcfuzzer` and it will be preserved under your `$PWD`.
+This command mounts the current directory (`$PWD`) to `/work/ctodcfuzzer` inside the container and sets it as the working directory.
 
-### Note for expeirments
-It is supposed to run **only one** ctodcfuzzer instance at the same time in a single container for the current implementation.
+Ensure that the fuzzing output directory is located under `/work/ctodcfuzzer` to preserve the results on the host.
 
-All ctodcfuzzer instances in the same container share a single cgroup for the current implementaion.
+### Initialization
 
-Generating different cgroup subgroups for differnet instances is on the roadmap.
-
-### Init
 After entering the docker container, run the following commands; it will setup necessary parameters for fuzzing and create the cgroups.
+
 ```sh
 sudo /init.sh
 ```
@@ -71,14 +72,12 @@ sudo /init.sh
 For a system that is using cgroup v2, a manual downgrade to v1 is necessary. This can be done by adding `systemd.unified_cgroup_hierarchy=0` to the kernel command line (e.g., via /etc/default/grub).
 
 ### Fuzzing ###
-All the evaluation is run by `ctodcfuzzer` framework.
-Please refer to [cli.py](./ctodcfuzzer/cli.py) for all possible arguments.
+`CTODCFuzzer`  supports collaborative fuzzing with AFLGo, WindRanger, and DAFL..
+For the complete list of command-line arguments, refer to [cli.py](./ctodcfuzzer/cli.py) .
 
-#### ctodcfuzzer ####
+#### Example ####
 
-For example, we want to fuzz `swftophp-2016-9829` (by `-t`) using 3 fuzzers by `-f`: `AFLGo`, `WindRanger`, `DAFL`. `-T` for the timeout.
-
-The fuzzing result reside in `output` (by specifying `-o`).
+The following command runs  `CTODCFuzzer` on the target vulnerability  `swftophp-2016-9829` using `AFLGo`, `WindRanger`, `DAFL`:
 
 ```sh
 ctodcfuzzer -o output -f aflgo dafl windranger --focus 300 --weight 20 --sync_top_k 10 -T 86400 -t swftophp-2016-9829
