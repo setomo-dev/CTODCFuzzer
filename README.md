@@ -70,8 +70,6 @@ sudo /init.sh
 #### Cgroups V2
 For a system that is using cgroup v2, a manual downgrade to v1 is necessary. This can be done by adding `systemd.unified_cgroup_hierarchy=0` to the kernel command line (e.g., via /etc/default/grub).
 
-Thanks for the anonymous reviewers for suggestion.
-
 ### Fuzzing ###
 All the evaluation is run by `ctodcfuzzer` framework.
 Please refer to [cli.py](./ctodcfuzzer/cli.py) for all possible arguments.
